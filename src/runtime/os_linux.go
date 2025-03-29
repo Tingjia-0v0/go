@@ -187,6 +187,8 @@ func newosproc(mp *m) {
 		// clone returns positive TID, negative errno.
 		// We don't care about the TID.
 		if r >= 0 {
+			trace_create_proc(uint64(r), int64(mp.id), uint64(mp.g0.goid))
+			// Trace the tid
 			return 0
 		}
 		return -r
@@ -216,6 +218,7 @@ func newosproc0(stacksize uintptr, fn unsafe.Pointer) {
 		writeErrStr(failthreadcreate)
 		exit(1)
 	}
+	trace_create_proc(uint64(ret), int64(0), uint64(0))
 }
 
 const (

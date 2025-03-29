@@ -121,6 +121,118 @@ var (
 	raceFiniLock mutex
 )
 
+// The size of the union’s largest member
+const unionIntSize = 3
+const max_sample_entries = 10000000
+
+type create_proc_sample struct {
+	proc_id uint64
+	m_id    int64
+	go_id   uint64
+}
+
+type sample_entry struct {
+	sched_clock int64
+	entry_type  uint8
+	data        [unionIntSize]uint64
+}
+
+const (
+	create_proc_type uint8 = iota
+)
+
+type trace_custom_buffer struct {
+	entries                 [max_sample_entries]sample_entry
+	current_sample_entry_id uint32
+}
+
+var trace_custom_buffer0 *trace_custom_buffer
+
+func getSampleEntry() *sample_entry {
+	if trace_custom_buffer0 == nil {
+		return nil
+	}
+
+	index := atomic.Xadd(&trace_custom_buffer0.current_sample_entry_id, 1)
+
+	if index >= max_sample_entries {
+		return nil
+	}
+
+	return &trace_custom_buffer0.entries[index]
+}
+
+func Init_trace_custom() {
+	trace_custom_buffer0 = (*trace_custom_buffer)(sysAlloc(
+		unsafe.Sizeof(trace_custom_buffer{}),
+		&memstats.other_sys,
+		"sample entries",
+	))
+
+	trace_custom_buffer0.current_sample_entry_id = 0
+}
+
+func trace_create_proc(procid uint64, m_id int64, go_id uint64) {
+	entry := getSampleEntry()
+	if entry == nil {
+		return
+	}
+
+	entry.sched_clock = nanotime()
+	entry.entry_type = create_proc_type
+
+	entry.data[0] = procid
+	entry.data[1] = uint64(m_id)
+	entry.data[2] = go_id
+
+	return
+}
+
+func varint(v uint64, buf []byte) {
+	for i := range buf {
+		buf[i] = byte(v)
+		v >>= 8
+	}
+}
+
+func GetSampleEntryOut() []byte {
+	if trace_custom_buffer0 == nil {
+		buf := make([]byte, 0, 0)
+		return buf
+	}
+
+	n_sample_entries := atomic.Load(&trace_custom_buffer0.current_sample_entry_id)
+	if n_sample_entries >= max_sample_entries {
+		n_sample_entries = max_sample_entries
+	}
+
+	var iteration uint32
+	// For each entry
+	// Format: sched_clock(8 bytes) || entry_type(1 byte) || data(unionIntSize*8 bytes)
+	buf := make([]byte, 1+n_sample_entries*(unionIntSize*8+8+1), 1+n_sample_entries*(unionIntSize*8+8+1))
+	buf[0] = 0xFF
+	pos := 1
+	for iteration = 0; iteration < n_sample_entries; iteration++ {
+		entry := &trace_custom_buffer0.entries[iteration]
+
+		varint(uint64(entry.sched_clock), buf[pos:pos+8])
+		pos += 8
+		buf[pos] = byte(entry.entry_type)
+		pos += 1
+
+		if entry.entry_type == create_proc_type {
+			varint(entry.data[0], buf[pos:pos+8])
+			pos += 8
+			varint(entry.data[1], buf[pos:pos+8])
+			pos += 8
+			varint(entry.data[2], buf[pos:pos+8])
+			pos += 8
+		}
+	}
+
+	return buf
+}
+
 // This slice records the initializing tasks that need to be
 // done to start up the runtime. It is built by the linker.
 var runtime_inittasks []*initTask

@@ -9894,6 +9894,8 @@ var PackageSymbols = map[string][]Symbol{
 		{"TypeAssertionError", Type, 0},
 		{"UnlockOSThread", Func, 0},
 		{"Version", Func, 0},
+		{"GetSampleEntryOut", Func, 5},
+		{"Init_trace_custom", Func, 5},
 	},
 	"runtime/cgo": {
 		{"(Handle).Delete", Method, 17},
@@ -10007,6 +10009,8 @@ var PackageSymbols = map[string][]Symbol{
 		{"Stop", Func, 5},
 		{"Task", Type, 11},
 		{"WithRegion", Func, 11},
+		{"FlushTraceCustom", Func, 5},
+		{"InitTraceCustom", Func, 5},
 	},
 	"slices": {
 		{"All", Func, 23},

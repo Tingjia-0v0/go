@@ -115,6 +115,15 @@ import (
 	"sync/atomic"
 )
 
+func FlushTraceCustom(w io.Writer) {
+	out := runtime.GetSampleEntryOut()
+	w.Write(out)
+}
+
+func InitTraceCustom() {
+	runtime.Init_trace_custom()
+}
+
 // Start enables tracing for the current program.
 // While tracing, the trace will be buffered and written to w.
 // Start returns an error if tracing is already enabled.

@@ -880,8 +880,12 @@ pkg runtime, func ReadTrace() []uint8
 pkg runtime, func StartTrace() error
 pkg runtime, func StopTrace()
 pkg runtime, type MemStats struct, GCCPUFraction float64
+pkg runtime, func GetSampleEntryOut() []uint8
+pkg runtime, func Init_trace_custom()
 pkg runtime/trace, func Start(io.Writer) error
 pkg runtime/trace, func Stop()
+pkg runtime/trace, func FlushTraceCustom(io.Writer)
+pkg runtime/trace, func InitTraceCustom()
 pkg strings, func Compare(string, string) int
 pkg strings, func LastIndexByte(string, uint8) int
 pkg strings, method (*Reader) Size() int64
