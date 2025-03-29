@@ -209,16 +209,16 @@ func GetSampleEntryOut() []byte {
 	var iteration uint32
 	// For each entry
 	// Format: sched_clock(8 bytes) || entry_type(1 byte) || data(unionIntSize*8 bytes)
-	buf := make([]byte, 1+n_sample_entries*(unionIntSize*8+8+1), 1+n_sample_entries*(unionIntSize*8+8+1))
-	buf[0] = 0xFF
-	pos := 1
+	buf := make([]byte, n_sample_entries*(unionIntSize*8+8+8), n_sample_entries*(unionIntSize*8+8+8))
+	// buf[0] = 0xFF
+	pos := 0
 	for iteration = 0; iteration < n_sample_entries; iteration++ {
 		entry := &trace_custom_buffer0.entries[iteration]
 
 		varint(uint64(entry.sched_clock), buf[pos:pos+8])
 		pos += 8
 		buf[pos] = byte(entry.entry_type)
-		pos += 1
+		pos += 8
 
 		if entry.entry_type == create_proc_type {
 			varint(entry.data[0], buf[pos:pos+8])
